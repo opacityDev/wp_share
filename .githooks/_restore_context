@@ -1,0 +1,8 @@
+#!/bin/sh
+
+repo_name=$(basename -s .git `git config --get remote.origin.url`)
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+container_id=$(docker ps -q --filter="name=$repo_name\_mysql")  
+
+.githooks/_handler_mysql_container
+.githooks/_handler_wordpress_container

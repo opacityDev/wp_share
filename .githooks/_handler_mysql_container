@@ -1,0 +1,38 @@
+#!/bin/sh
+
+repo_name=$(basename -s .git `git config --get remote.origin.url`)
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+container_id=$(docker ps -q --filter="name=$repo_name\_mysql")  
+
+if [ -z $container_id ]
+then
+
+    container_id=$(docker ps -a -q --filter="name=$repo_name\_mysql")  
+    
+    if [ ! -z $container_id ]
+    then
+    
+        docker restart $container_id
+
+    else
+
+        docker pull mysql:latest
+        docker run -d -e MYSQL_ROOT_PASSWORD=$repo_name --name=$repo_name\_mysql mysql:latest
+
+    fi
+    
+    echo "Waiting for mysql container to start "
+    sleep 20s 
+
+fi
+
+container_id=$(docker ps -q --filter="name=$repo_name\_mysql") 
+
+mysql_cip=$(docker inspect $container_id -f '{{ .NetworkSettings.IPAddress }}')
+
+python3 .githooks/deploy_db.py $mysql_cip wp_$repo_name\_$current_branch root $repo_name
+
+mysql -h $mysql_cip -u root --password=$repo_name wp_$repo_name\_$current_branch 2> /dev/null < ./.volumes/$current_branch/dump.sql
+
+echo "dump.sql has been successfully restored"
+

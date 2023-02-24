@@ -1,0 +1,5 @@
+#!/bin/sh
+
+repo_name=$(basename -s .git `git config --get remote.origin.url`)
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+

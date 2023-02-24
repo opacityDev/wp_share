@@ -1,0 +1,22 @@
+#!/bin/bash
+echo "**** Era Media clean commit hook ****"
+echo "- Requiring essential data about current repo"
+ 
+repo_name=$(basename -s .git `git config --get remote.origin.url`)
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+mysql_cid=$(docker ps -q --filter="ancestor=mysql:latest")
+mysql_cip=$(docker inspect $mysql_cid -f '{{ .NetworkSettings.IPAddress }}')
+echo "- Mysql container ID/IP => $mysql_cid/$mysql_cip"
+
+echo "- Dumping local mysql database of branch $current_branch" 
+$(docker exec $mysql_cid mysqldump -uroot --password=$repo_name wp_$repo_name\_$current_branch  2> /dev/null > ./html/dump.sql)
+
+echo "- Adding new dumped mysql table .."
+
+wp_cid=$(docker ps -q --filter="name=wp_$repo_name\_$current_branch")
+wp_cip=$(docker inspect $wp_cid -f '{{.NetworkSettings.IPAddress}}')
+echo "- Wordpress container for branch $current_branch ID/IP => $wp_cid/$wp_cip"
+
+docker cp $wp_cid:/var/www/html/ .
+git add -f html

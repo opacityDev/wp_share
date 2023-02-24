@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ $# -le 2 ]
+then
+    echo "Error : No enough args "
+    exit 1
+fi
+
+container_id=$(docker ps -q --filter="$1") 
+
+if [ ! -z $container_id ]
+then
+    exit 0
+fi
+
+echo "- Running a new docker container from image $2 "
+docker run -d --name=$3 $1

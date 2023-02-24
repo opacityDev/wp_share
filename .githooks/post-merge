@@ -1,0 +1,3 @@
+#!/bin/sh
+
+.githooks/_restore_context

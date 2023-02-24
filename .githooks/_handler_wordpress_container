@@ -1,0 +1,48 @@
+#!/bin/sh
+
+repo_name=$(basename -s .git `git config --get remote.origin.url`)
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+new=1
+container_id=$(docker ps -q --filter="ancestor=wordpress:latest" --filter="name=wp_$repo_name_$current_branch") 
+version="6.1.1"
+
+if [ ! -z $container_id ]
+then
+    exit 0
+fi
+
+mysql_cid=$(docker ps -q --filter="name=$repo_name\_mysql")
+echo "MYSQL ID => $mysql_cid"
+mysql_cip=$(docker inspect $mysql_cid -f '{{ .NetworkSettings.IPAddress }}') 
+
+wp_cid=$(docker ps -q -a --filter="name=wp_$repo_name\_$current_branch")
+
+if [ ! -z $wp_cid ]
+then
+    docker rm --force $wp_cid 
+fi
+
+if [ ! -d "html" ]
+then
+
+    mkdir .volumes
+    curl -o wordpress.tar.gz -fL "https://wordpress.org/wordpress-$version.tar.gz"
+    tar -xzf wordpress.tar.gz -C html
+	rm wordpress.tar.gz
+    
+fi
+
+cp .githooks/Dockerfile Dockerfile
+cp .githooks/wp-config-docker.php wp-config-docker.php
+cp .githooks/docker-entrypoint.sh docker-entrypoint.sh
+
+docker build -t $repo_name:$current_branch .
+docker run -d -e WORDPRESS_DB_HOST=$mysql_cip -e WORDPRESS_DB_USER=root -e WORDPRESS_DB_PASSWORD=$repo_name -e WORDPRESS_DB_NAME=wp_$repo_name\_$current_branch -e WORDPRESS_TABLE_PREFIX=wp_ --name=wp_$repo_name\_$current_branch $repo_name:$current_branch
+
+wp_cid=$(docker ps -q --filter="name=wp_$repo_name\_$current_branch")
+wp_cip=$(docker inspect $wp_cid -f '{{.NetworkSettings.IPAddress}}')
+echo "- Wordpress container for branch $current_branch ID/IP => $wp_cid/$wp_cip"
+
+rm *.php
+rm *.sh
+rm Dockerfile
