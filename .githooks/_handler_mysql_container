@@ -32,7 +32,7 @@ mysql_cip=$(docker inspect $container_id -f '{{ .NetworkSettings.IPAddress }}')
 
 python3 .githooks/deploy_db.py $mysql_cip wp_$repo_name\_$current_branch root $repo_name
 
-mysql -h $mysql_cip -u root --password=$repo_name wp_$repo_name\_$current_branch 2> /dev/null < ./.volumes/$current_branch/dump.sql
+mysql -h $mysql_cip -u root --password=$repo_name wp_$repo_name\_$current_branch < html/dump.sql
 
 echo "dump.sql has been successfully restored"
 

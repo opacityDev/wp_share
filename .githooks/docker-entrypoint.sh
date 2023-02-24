@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
+set -Eeuo pipefail 
 
 if [[ "$1" == apache2* ]] || [ "$1" = 'php-fpm' ]; then
 	uid="$(id -u)"

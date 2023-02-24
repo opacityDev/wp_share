@@ -10,13 +10,16 @@ mysql_cip=$(docker inspect $mysql_cid -f '{{ .NetworkSettings.IPAddress }}')
 echo "- Mysql container ID/IP => $mysql_cid/$mysql_cip"
 
 echo "- Dumping local mysql database of branch $current_branch" 
-$(docker exec $mysql_cid mysqldump -uroot --password=$repo_name wp_$repo_name\_$current_branch  2> /dev/null > ./html/dump.sql)
+docker exec $mysql_cid mysqldump -uroot --password=$repo_name wp_$repo_name\_$current_branch > dump.sql
 
-echo "- Adding new dumped mysql table .."
+
 
 wp_cid=$(docker ps -q --filter="name=wp_$repo_name\_$current_branch")
 wp_cip=$(docker inspect $wp_cid -f '{{.NetworkSettings.IPAddress}}')
 echo "- Wordpress container for branch $current_branch ID/IP => $wp_cid/$wp_cip"
 
-docker cp $wp_cid:/var/www/html/ .
-git add -f html
+docker exec $wp_cid rm /var/www/html/dump.sql
+docker cp dump.sql $wp_cid:/var/www/html/
+rm dump.sql
+
+docker cp $wp_cid:/var/www/html/ . && sleep 3s && git add .

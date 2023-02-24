@@ -25,9 +25,10 @@ fi
 if [ ! -d "html" ]
 then
 
-    mkdir .volumes
     curl -o wordpress.tar.gz -fL "https://wordpress.org/wordpress-$version.tar.gz"
-    tar -xzf wordpress.tar.gz -C html
+    tar -xzf wordpress.tar.gz -C .
+    mv wordpress html
+    cp .githooks/wp-config-docker.php html/wp-config-docker.php
 	rm wordpress.tar.gz
     
 fi
